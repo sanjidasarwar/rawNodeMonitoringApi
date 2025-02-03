@@ -8,6 +8,8 @@
 
 // dependencies
 const { StringDecoder } = require('string_decoder');
+const routes = require('../route')
+const {notFoundHandler} = require('../handlers/routesHandlers/notFoundHandler')
 
 // modue scaffolding
 const handler = {};
@@ -20,8 +22,31 @@ handler.handleReqRes =(req, res)=>{
     const method = req.method.toLowerCase()
     const queryStringObject = fullUrl.searchParams
     const headersObj = req.headers
+    const requstedProperties ={
+        fullUrl,
+        pathName,
+        trimedPathName,
+        method,
+        queryStringObject,
+        headersObj
+    }
+
     const decoder = new StringDecoder()
     let realData=''
+
+    const routesHandlers = routes[trimedPathName] ? routes[trimedPathName] : notFoundHandler
+
+    routesHandlers(requstedProperties, (statusCode, payload)=>{
+        statusCode = typeof(statusCode) ==='number' ? statusCode : 500
+        payload = typeof(payload) ==='object' ? payload : {}
+
+        const payloadString = JSON.stringify(payload)
+
+        // return the final response
+        res.writeHead(statusCode);
+        res.end(payloadString);
+    })
+    
 
     req.on('data', (buffer)=>{
         realData += decoder.write(buffer)
