@@ -7,7 +7,7 @@
  */
 
 // dependencies
-// const url = require('url')
+const { StringDecoder } = require('string_decoder');
 
 // modue scaffolding
 const handler = {};
@@ -20,10 +20,23 @@ handler.handleReqRes =(req, res)=>{
     const method = req.method.toLowerCase()
     const queryStringObject = fullUrl.searchParams
     const headersObj = req.headers
+    const decoder = new StringDecoder()
+    let realData=''
+
+    req.on('data', (buffer)=>{
+        realData += decoder.write(buffer)
+    })
+
+    req.on('end', ()=>{
+        realData += decoder.end()
+
+        console.log(realData);
+        // response handle
+        res.end('Hello world')
+        
+    })
     
     
-    // response handle
-    res.end('Hello world')
 }
 
 
