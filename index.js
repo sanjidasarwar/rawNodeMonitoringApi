@@ -15,7 +15,7 @@ const data =require('./lib/data')
 // app object - module scaffolding
 const app ={}
 
-data.createFile('test', 'newfile', {'name': 'bangladesh', 'language':'bangla'}, (err)=>{
+data.update('test', 'newfile', {'name': 'england', 'language':'english'}, (err)=>{
     console.log('error is', err);
     
 } )
