@@ -15,7 +15,7 @@ const data =require('./lib/data')
 // app object - module scaffolding
 const app ={}
 
-data.update('test', 'newfile', {'name': 'england', 'language':'english'}, (err)=>{
+data.delete('test', 'newfile', (err)=>{
     console.log('error is', err);
     
 } )
