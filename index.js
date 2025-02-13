@@ -15,11 +15,6 @@ const data =require('./lib/data')
 // app object - module scaffolding
 const app ={}
 
-data.delete('test', 'newfile', (err)=>{
-    console.log('error is', err);
-    
-} )
-
 // configuration
 app.config ={
     port:3000
