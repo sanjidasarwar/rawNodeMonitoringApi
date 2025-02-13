@@ -10,6 +10,7 @@
 const { StringDecoder } = require('string_decoder');
 const routes = require('../route')
 const {notFoundHandler} = require('../handlers/routesHandlers/notFoundHandler')
+const {parseJSON} = require('./utilities')
 
 // modue scaffolding
 const handler = {};
@@ -41,23 +42,25 @@ handler.handleReqRes =(req, res)=>{
     req.on('end', ()=>{
         realData += decoder.end()
 
+        requstedProperties.body=parseJSON(realData)
+
         const routesHandlers = routes[trimedPathName] ? routes[trimedPathName] : notFoundHandler
 
         routesHandlers(requstedProperties, (statusCode, payload)=>{
+            if (res.headersSent) {
+                return; // Do not send the response again
+            }
             statusCode = typeof(statusCode) ==='number' ? statusCode : 500
             payload = typeof(payload) ==='object' ? payload : {}
     
             const payloadString = JSON.stringify(payload)
     
             // return the final response
-            res.setHeader('Content-Type', 'application/json');
+            // res.setHeader('Content-Type', 'application/json');
             res.writeHead(statusCode);
             res.end(payloadString);
         })
-
         console.log(realData);
-        // response handle
-        res.end('Hello world')
         
     })
     
