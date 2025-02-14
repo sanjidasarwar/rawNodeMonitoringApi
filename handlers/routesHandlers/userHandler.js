@@ -8,7 +8,6 @@
 // dependecies
 const data = require('../../lib/data')
 const {hashPassword, parseJSON} = require('../../helper/utilities');
-const { user } = require('../../route');
 
 // module scaffolding
 const handler={}
@@ -108,6 +107,63 @@ handler._users.get=(requstedProperties, callback)=>{
     
 }
 
+handler._users.put=async (requstedProperties, callback)=>{
+    
+    const firstName =typeof requstedProperties.body.firstName ==='string' && requstedProperties.body.firstName.trim().length > 0 ? requstedProperties.body.firstName : false
+
+    const lastName =typeof requstedProperties.body.lastName ==='string' && requstedProperties.body.lastName.trim().length > 0 ? requstedProperties.body.lastName : false
+
+    const password =typeof requstedProperties.body.password ==='string' && requstedProperties.body.password.trim().length > 0 ? requstedProperties.body.password : false
+
+    const phone =typeof requstedProperties.body.phone ==='string' && requstedProperties.body.phone.trim().length === 11 ? requstedProperties.body.phone : false
+
+    if(phone){
+        if(firstName || lastName || password){
+            data.read('users', phone, (readErr, userData)=>{
+                if(readErr){
+                    return callback(400, {
+                        error: 'you have a problem in read data'
+                    })
+                }
+
+                const user ={...parseJSON(userData)}
+
+                if(firstName){
+                    user.firstName =firstName
+                }
+                if(lastName){
+                    user.lastName =lastName
+                }
+                if(password){
+                    user.password =password
+                }
+
+                data.update('users', phone, user, (updateErr)=>{
+                    if(updateErr){
+                        return callback(400, {
+                            error: 'error in update user data'
+                        })
+                    }
+
+                    callback(200, {
+                        message: 'User was updated successfully!',
+                    });
+                })
+            })
+
+        }else {
+            callback(400, {
+                error: 'You have a problem in your request!',
+            });
+        }
+
+    }else{
+        callback(400, {
+            error: 'Invalid phone number. Please try again!',
+        });
+    }
+
+}
 
 module.exports=handler
 
