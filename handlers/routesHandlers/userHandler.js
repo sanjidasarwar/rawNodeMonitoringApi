@@ -48,7 +48,6 @@ handler._users.post=async (requstedProperties, callback)=>{
 
             try {
                 const hashedPassword = await hashPassword(password);
-                console.log("Hashed Password:", hashedPassword);
 
                 const userObject ={
                     firstName,
@@ -119,7 +118,7 @@ handler._users.put=async (requstedProperties, callback)=>{
 
     if(phone){
         if(firstName || lastName || password){
-            data.read('users', phone, (readErr, userData)=>{
+            data.read('users', phone,async (readErr, userData)=>{
                 if(readErr){
                     return callback(400, {
                         error: 'you have a problem in read data'
@@ -135,7 +134,13 @@ handler._users.put=async (requstedProperties, callback)=>{
                     user.lastName =lastName
                 }
                 if(password){
-                    user.password =password
+                    try{
+                     const hashedPassword = await hashPassword(password);
+                     user.password =hashedPassword
+                    }catch(err){
+                        callback(500, { error: 'Password hashing failed!' });
+
+                    }
                 }
 
                 data.update('users', phone, user, (updateErr)=>{
@@ -163,6 +168,36 @@ handler._users.put=async (requstedProperties, callback)=>{
         });
     }
 
+}
+
+handler._users.delete= (requstedProperties, callback)=>{
+    const phone =typeof requstedProperties.body.phone ==='string' && requstedProperties.body.phone.trim().length === 11 ? requstedProperties.body.phone : false
+
+    if(phone){
+        data.read('users', phone, (readErr)=>{
+            if(readErr){
+                return callback(400, {
+                    error: 'Error in read data'
+                })
+            }
+            data.delete('users', phone, (deleteErr)=>{
+                if(deleteErr){
+                    return callback(400, {
+                        error: 'Error in delete data'
+                    })
+                }else{
+                    callback(200, {
+                        message: 'User is successfully deleted!',
+                    });
+                }
+
+            })
+        })
+    }else{
+        callback(400, {
+            error: 'Invalid phone number. Please try again!',
+        });
+    }
 }
 
 module.exports=handler
