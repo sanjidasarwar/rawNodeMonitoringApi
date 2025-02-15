@@ -1,5 +1,5 @@
 // dependencies
-const { hashPassword, parseJSON, createToken } = require('../../helper/utilities');
+const { compareHashPassword, parseJSON, createToken } = require('../../helper/utilities');
 const data = require('../../lib/data')
 
 // module scafollding
@@ -19,7 +19,7 @@ handler.tokenHandler = (requstedProperties, callback)=>{
 
 handler._token={}
 
-handler._token.post =(requstedProperties, callback)=>{
+handler._token.post =async (requstedProperties, callback)=>{
     // check valid phone and password
     const phone = typeof requstedProperties.body.phone ==='string' && requstedProperties.body.phone.trim().length === 11 ? requstedProperties.body.phone : false
 
@@ -34,13 +34,13 @@ handler._token.post =(requstedProperties, callback)=>{
          }
 
          try{
-            const hashedPassword = await hashPassword(password)
-            const parsedUserData = parseJSON(userData)
-            
+             const parsedUserData = parseJSON(userData)
+             const passwordMatched  = await compareHashPassword(password, parsedUserData.password)    
 
-            if(phone === parsedUserData.phone && hashedPassword === parsedUserData.password){
+            if(phone === parsedUserData.phone && passwordMatched){
                 
                 const tokenId = createToken(10)
+                
                 const tokenData={
                     tokenId,
                     phone,
