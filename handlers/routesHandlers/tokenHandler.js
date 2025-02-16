@@ -106,7 +106,7 @@ handler._token.put =(requstedProperties, callback) =>{
             const tokenObject = parseJSON(tokenData)
 
             if(tokenObject.expiryDate > Date.now()){
-                tokenObject.expiryDate= Date.now()*60*60*1000
+                tokenObject.expiryDate= Date.now() + 60*60*1000
 
                 data.update('tokens', id, tokenObject, (err)=>{
                     if(err){
@@ -151,6 +151,20 @@ handler._token.delete =(requstedProperties, callback) =>{
             error: 'There was a problem in your request!',
         });
     }
+}
+
+handler._token.varify =(tokenId, phone, callback)=>{
+    data.read('tokens', tokenId, (readErr, tokenData)=>{
+        if(readErr){
+            return callback(false)
+        }
+
+        if(parseJSON(tokenData).phone===phone && parseJSON(tokenData).expiryDate > Date.now()){
+            callback(true)
+        }else{
+            callback(false)
+        }
+    })
 }
 
 module.exports=handler
