@@ -70,5 +70,27 @@ handler._token.post =async (requstedProperties, callback)=>{
     })
 }
 
+handler._token.get = (requstedProperties, callback)=>{
+    const tokenId =typeof requstedProperties.queryStringObject.get('id') ==='string' && requstedProperties.queryStringObject.get('id').trim().length>0 ? requstedProperties.queryStringObject.get('id') : false
+
+    
+
+    if(tokenId){
+        data.read('tokens', tokenId, (err, tokenData)=>{
+            
+            if(err){
+                callback(500, { error: 'There was a problem in server side!'})
+            }
+
+            callback(200, parseJSON(tokenData))
+        })
+    }else{
+        callback(400, {
+            error: 'You have a problem in your request!',
+        });
+    }
+    
+}
+
 
 module.exports=handler
