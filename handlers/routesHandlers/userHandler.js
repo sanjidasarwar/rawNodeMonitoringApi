@@ -8,6 +8,7 @@
 // dependecies
 const data = require('../../lib/data')
 const {hashPassword, parseJSON} = require('../../helper/utilities');
+const tokenHandler =require('../../handlers/routesHandlers/tokenHandler')
 
 // module scaffolding
 const handler={}
@@ -83,19 +84,30 @@ handler._users.get=(requstedProperties, callback)=>{
     const phone =typeof requstedProperties.queryStringObject.get('phone')==='string' && requstedProperties.queryStringObject.get('phone').trim().length ==11 ? requstedProperties.queryStringObject.get('phone') :false
     
     if(phone){
-        data.read('users', phone, (readErr, data)=>{
-            if(readErr){
-                return  callback(404, {
-                    error: 'Error in reading data',
+        const token = typeof requstedProperties.headersObj.token ==='string' ? requstedProperties.headersObj.token : false
+
+        tokenHandler._token.varify(token,phone, (valid)=>{
+            if(valid){
+                data.read('users', phone, (readErr, data)=>{
+                    if(readErr){
+                        return  callback(404, {
+                            error: 'Error in reading data',
+                        });
+                    }            
+        
+                    const user ={...parseJSON(data)}
+                    delete user.password;
+                    callback(200, user);
+        
+        
+                })
+            }else{
+                callback(403, {
+                    error: 'Authentication failure!',
                 });
-            }            
+            }
+        } )
 
-            const user ={...parseJSON(data)}
-            delete user.password;
-            callback(200, user);
-
-
-        })
     }else{
         callback(404, {
             error: 'Requested user was not found!',
@@ -118,43 +130,54 @@ handler._users.put=async (requstedProperties, callback)=>{
 
     if(phone){
         if(firstName || lastName || password){
-            data.read('users', phone,async (readErr, userData)=>{
-                if(readErr){
-                    return callback(400, {
-                        error: 'you have a problem in read data'
-                    })
-                }
 
-                const user ={...parseJSON(userData)}
+            const token = typeof requstedProperties.headersObj.token ==='string' ? requstedProperties.headersObj.token : false
 
-                if(firstName){
-                    user.firstName =firstName
-                }
-                if(lastName){
-                    user.lastName =lastName
-                }
-                if(password){
-                    try{
-                     const hashedPassword = await hashPassword(password);
-                     user.password =hashedPassword
-                    }catch(err){
-                        callback(500, { error: 'Password hashing failed!' });
-
-                    }
-                }
-
-                data.update('users', phone, user, (updateErr)=>{
-                    if(updateErr){
-                        return callback(400, {
-                            error: 'error in update user data'
+            tokenHandler._token.varify(token,phone, (valid)=>{
+                if(valid){
+                    data.read('users', phone,async (readErr, userData)=>{
+                        if(readErr){
+                            return callback(400, {
+                                error: 'you have a problem in read data'
+                            })
+                        }
+        
+                        const user ={...parseJSON(userData)}
+        
+                        if(firstName){
+                            user.firstName =firstName
+                        }
+                        if(lastName){
+                            user.lastName =lastName
+                        }
+                        if(password){
+                            try{
+                             const hashedPassword = await hashPassword(password);
+                             user.password =hashedPassword
+                            }catch(err){
+                                callback(500, { error: 'Password hashing failed!' });
+        
+                            }
+                        }
+        
+                        data.update('users', phone, user, (updateErr)=>{
+                            if(updateErr){
+                                return callback(400, {
+                                    error: 'error in update user data'
+                                })
+                            }
+        
+                            callback(200, {
+                                message: 'User was updated successfully!',
+                            });
                         })
-                    }
-
-                    callback(200, {
-                        message: 'User was updated successfully!',
+                    })
+                }else{
+                    callback(403, {
+                        error: 'Authentication failure!',
                     });
-                })
-            })
+                }
+            } )
 
         }else {
             callback(400, {
@@ -174,25 +197,36 @@ handler._users.delete= (requstedProperties, callback)=>{
     const phone =typeof requstedProperties.body.phone ==='string' && requstedProperties.body.phone.trim().length === 11 ? requstedProperties.body.phone : false
 
     if(phone){
-        data.read('users', phone, (readErr)=>{
-            if(readErr){
-                return callback(400, {
-                    error: 'Error in read data'
-                })
-            }
-            data.delete('users', phone, (deleteErr)=>{
-                if(deleteErr){
-                    return callback(400, {
-                        error: 'Error in delete data'
-                    })
-                }else{
-                    callback(200, {
-                        message: 'User is successfully deleted!',
-                    });
-                }
+        const token = typeof requstedProperties.headersObj.token ==='string' ? requstedProperties.headersObj.token : false
 
-            })
-        })
+        tokenHandler._token.varify(token,phone, (valid)=>{
+            if(valid){
+                data.read('users', phone, (readErr)=>{
+                    if(readErr){
+                        return callback(400, {
+                            error: 'Error in read data'
+                        })
+                    }
+                    data.delete('users', phone, (deleteErr)=>{
+                        if(deleteErr){
+                            return callback(400, {
+                                error: 'Error in delete data'
+                            })
+                        }else{
+                            callback(200, {
+                                message: 'User is successfully deleted!',
+                            });
+                        }
+        
+                    })
+                })
+            }else{
+                callback(403, {
+                    error: 'Authentication failure!',
+                });
+            }
+        } )
+      
     }else{
         callback(400, {
             error: 'Invalid phone number. Please try again!',
