@@ -93,4 +93,39 @@ handler._token.get = (requstedProperties, callback)=>{
 }
 
 
+handler._token.put =(requstedProperties, callback) =>{
+    const id= typeof requstedProperties.body.tokenId ==='string' && requstedProperties.body.tokenId.trim().length > 0 ? requstedProperties.body.tokenId :false
+
+    const extend = !!(
+        typeof requstedProperties.body.extend === 'boolean' && requstedProperties.body.extend === true
+    );
+    
+
+    if(id && extend){
+        data.read('tokens', id, (err, tokenData)=>{
+            const tokenObject = parseJSON(tokenData)
+
+            if(tokenObject.expiryDate > Date.now()){
+                tokenObject.expiryDate= Date.now()*60*60*1000
+
+                data.update('tokens', id, tokenObject, (err)=>{
+                    if(err){
+                        callback(500, {
+                            error: 'There was a server side error!',
+                        });
+                    }else{
+                        callback(200, {
+                            message:'Successfully updated token'
+                        })
+                    }
+                })
+            }
+        })
+    }else{
+        callback(400, {
+            error: 'Token already expired!',
+        });
+    }
+}
+
 module.exports=handler
