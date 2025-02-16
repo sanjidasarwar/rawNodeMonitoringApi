@@ -128,4 +128,29 @@ handler._token.put =(requstedProperties, callback) =>{
     }
 }
 
+handler._token.delete =(requstedProperties, callback) =>{
+    const tokenId = typeof requstedProperties.queryStringObject.get('id') ==='string' && requstedProperties.queryStringObject.get('id').trim().length > 0 ? requstedProperties.queryStringObject.get('id') :false
+
+    if(tokenId){
+        data.read('tokens', tokenId, (readErr)=>{
+            if(readErr){
+                return callback(500, { error: 'There was a problem in server side!' });
+            }
+
+            data.delete('tokens', tokenId, (err) =>{
+                if(err){
+                    return callback(500, { error: 'There was a problem in server side!' });
+                }
+                callback(200, {
+                    message:'Successfully deleted token'
+                })
+            })
+        })
+    }else{
+        callback(400, {
+            error: 'There was a problem in your request!',
+        });
+    }
+}
+
 module.exports=handler
