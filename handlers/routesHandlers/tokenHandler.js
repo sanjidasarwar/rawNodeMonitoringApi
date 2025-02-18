@@ -1,5 +1,5 @@
 // dependencies
-const { compareHashPassword, parseJSON, createToken } = require('../../helper/utilities');
+const { compareHashPassword, parseJSON, createRandomString } = require('../../helper/utilities');
 const data = require('../../lib/data')
 
 // module scafollding
@@ -39,7 +39,7 @@ handler._token.post =async (requstedProperties, callback)=>{
 
             if(phone === parsedUserData.phone && passwordMatched){
                 
-                const tokenId = createToken(10)
+                const tokenId = createRandomString(10)
                 
                 const tokenData={
                     tokenId,

@@ -27,7 +27,7 @@ utilities.compareHashPassword=async(password, hashedPassword)=>{
     return passwordMatched
 }
 
-utilities.createToken = (strLength) =>{
+utilities.createRandomString = (strLength) =>{
     let length =typeof strLength ==='number' && strLength >0 ? strLength : false
     
     if(length){
