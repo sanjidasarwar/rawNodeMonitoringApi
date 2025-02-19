@@ -85,7 +85,7 @@ handler._check.post = (requstedProperties, callback)=>{
 
                         data.update('users', userPhone, userObject, (updateErr)=>{
                             if(updateErr){
-                                callback(500, {
+                                return callback(500, {
                                     error:
                                         'There was a problem in the server side!',
                                 });
@@ -114,7 +114,7 @@ handler._check.get =(requstedProperties, callback)=>{
     if(id){
         data.read('checks', id, (readErr, checkData)=>{
             if(readErr){
-                callback(500, {
+                return  callback(500, {
                     error: 'You have a problem in your request',
                 });
             }
@@ -127,7 +127,7 @@ handler._check.get =(requstedProperties, callback)=>{
 
             tokenHandler._token.varify(token, checkDataObject.userPhone, (isvalid)=>{
                     if(!isvalid){
-                        callback(403, {
+                        return  callback(403, {
                             error: 'Authentication failure!',
                         });
                     }
@@ -159,7 +159,7 @@ handler._check.put =(requstedProperties, callback) =>{
     if(id){
         data.read('checks', id, (readErr, checkData)=>{
             if(readErr){
-                callback(500, {
+                return  callback(500, {
                     error: 'You have a problem in your request',
                 });
             }
@@ -172,7 +172,7 @@ handler._check.put =(requstedProperties, callback) =>{
 
         tokenHandler._token.varify(token, checkDataObject.userPhone, (isvalid)=>{
                 if(!isvalid){
-                    callback(403, {
+                    return   callback(403, {
                         error: 'Authentication failure!',
                     });
                 }
@@ -195,7 +195,7 @@ handler._check.put =(requstedProperties, callback) =>{
 
                 data.update('checks', id, checkDataObject, (updateErr)=>{
                     if(updateErr){
-                        callback(500, {
+                        return callback(500, {
                             error: 'There was a server side error!',
                         });
                     }
@@ -212,4 +212,72 @@ handler._check.put =(requstedProperties, callback) =>{
         });
     }
 }
+
+handler._check.delete = (requestedProperties, callback) => {
+    const id = typeof requestedProperties.queryStringObject.get('id') === 'string' &&
+        requestedProperties.queryStringObject.get('id').trim().length == 15
+            ? requestedProperties.queryStringObject.get('id')
+            : false;
+
+    if (!id) {
+        return callback(400, { error: 'Invalid or missing ID.' });
+    }
+
+    data.read('checks', id, (readErr, checkData) => {
+        if (readErr || !checkData) {
+            return callback(500, { error: 'Check not found or read error!' });
+        }
+
+        const token =
+            typeof requestedProperties.headersObj.token === 'string'
+                ? requestedProperties.headersObj.token
+                : false;
+
+        const checkDataObject = parseJSON(checkData);
+
+        tokenHandler._token.varify(token, checkDataObject.userPhone, (isValid) => {
+            if (!isValid) {
+                return callback(403, { error: 'Authentication failure!' });
+            }
+
+            // Delete the check
+            data.delete('checks', id, (deleteErr) => {
+                if (deleteErr) {
+                    return callback(500, { error: 'Failed to delete check!' });
+                }
+
+                // Read user data
+                data.read('users', checkDataObject.userPhone, (userErr, userData) => {
+                    if (userErr || !userData) {
+                        return callback(500, { error: 'User not found!' });
+                    }
+
+                    const userDataObject = parseJSON(userData);
+                    const userChecks = Array.isArray(userDataObject.checks)
+                        ? userDataObject.checks
+                        : [];
+
+                    const checkPosition = userChecks.indexOf(id);
+                    if (checkPosition > -1) {
+                        // Remove the check ID from user's checks array
+                        userChecks.splice(checkPosition, 1);
+                        userDataObject.checks = userChecks;
+
+                        // Update the user data
+                        data.update('users', checkDataObject.userPhone, userDataObject, (updateErr) => {
+                            if (updateErr) {
+                                return callback(500, { error: 'Failed to update user data!' });
+                            }
+
+                            callback(200, { message: 'Check deleted successfully!' });
+                        });
+                    } else {
+                        callback(500, { error: 'Check ID not found in user data!' });
+                    }
+                });
+            });
+        });
+    });
+};
+
 module.exports= handler
