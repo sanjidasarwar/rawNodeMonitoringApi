@@ -108,4 +108,108 @@ handler._check.post = (requstedProperties, callback)=>{
     
 }
 
+handler._check.get =(requstedProperties, callback)=>{
+    const id =typeof requstedProperties.queryStringObject.get('id')==='string' && requstedProperties.queryStringObject.get('id').trim().length ==15 ? requstedProperties.queryStringObject.get('id') :false
+
+    if(id){
+        data.read('checks', id, (readErr, checkData)=>{
+            if(readErr){
+                callback(500, {
+                    error: 'You have a problem in your request',
+                });
+            }
+
+            const token = typeof requstedProperties.headersObj.token === 'string'
+                ? requstedProperties.headersObj.token
+                : false;
+            
+            const checkDataObject = parseJSON(checkData)
+
+            tokenHandler._token.varify(token, checkDataObject.userPhone, (isvalid)=>{
+                    if(!isvalid){
+                        callback(403, {
+                            error: 'Authentication failure!',
+                        });
+                    }
+
+                    data.read(callback(200, checkDataObject))
+            })
+        })
+
+    }else{
+        callback(400, {
+            error: 'You have a problem in your request',
+        })
+    }
+}
+
+handler._check.put =(requstedProperties, callback) =>{
+    const protocol =typeof requstedProperties.body.protocol === 'string' && ['http', 'https'].indexOf(requstedProperties.body.protocol) >-1 ? requstedProperties.body.protocol : false
+
+    const url = typeof requstedProperties.body.url ==='string' && requstedProperties.body.url.trim().length >0 ? requstedProperties.body.url : false
+
+    const method = typeof requstedProperties.body.method ==='string' && ['get', 'post', 'put', 'delete'].indexOf(requstedProperties.body.method) >-1 ? requstedProperties.body.method : false
+
+    const successCode = Array.isArray(requstedProperties.body.successCode) ? requstedProperties.body.successCode : false
+
+    const timeoutSeconds = typeof requstedProperties.body.timeoutSeconds === 'number' && requstedProperties.body.timeoutSeconds % 1 === 0 && requstedProperties.body.timeoutSeconds >=1 && requstedProperties.body.timeoutSeconds<=5 ? requstedProperties.body.timeoutSeconds :false
+
+    const id =typeof requstedProperties.queryStringObject.get('id')==='string' && requstedProperties.queryStringObject.get('id').trim().length ==15 ? requstedProperties.queryStringObject.get('id') :false
+
+    if(id){
+        data.read('checks', id, (readErr, checkData)=>{
+            if(readErr){
+                callback(500, {
+                    error: 'You have a problem in your request',
+                });
+            }
+
+            const token = typeof requstedProperties.headersObj.token === 'string'
+            ? requstedProperties.headersObj.token
+            : false;
+        
+        const checkDataObject = parseJSON(checkData)
+
+        tokenHandler._token.varify(token, checkDataObject.userPhone, (isvalid)=>{
+                if(!isvalid){
+                    callback(403, {
+                        error: 'Authentication failure!',
+                    });
+                }
+
+                if(protocol){
+                    checkDataObject.protocol = protocol
+                }
+                if(url){
+                    checkDataObject.url = url
+                }
+                if(method){
+                    checkDataObject.method = method
+                }
+                if(successCode){
+                    checkDataObject.successCode = successCode
+                }
+                if(timeoutSeconds){
+                    checkDataObject.timeoutSeconds = timeoutSeconds
+                }
+
+                data.update('checks', id, checkDataObject, (updateErr)=>{
+                    if(updateErr){
+                        callback(500, {
+                            error: 'There was a server side error!',
+                        });
+                    }
+                    callback(200, {
+                        message:'Successfully updated check'
+                    })
+                })
+        })
+
+        })
+    }else{
+        callback(400, {
+            error: 'You have a problem in your request',
+        });
+    }
+}
 module.exports= handler
